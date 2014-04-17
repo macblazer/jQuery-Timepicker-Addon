@@ -62,6 +62,7 @@
 			showMicrosec: null,
 			showTimezone: null,
 			showTime: true,
+			singleHourMinutePicker: false,
 			stepHour: 1,
 			stepMinute: 1,
 			stepSecond: 1,
@@ -385,7 +386,7 @@
 					gridSize[litem] = 0;
 
 					html += '<dt class="ui_tpicker_' + litem + '_label"' + (show ? '' : noDisplay) + '>' + o[litem + 'Text'] + '</dt>' +
-								'<dd class="ui_tpicker_' + litem + '"><div class="ui_tpicker_' + litem + '_slider"' + (show ? '' : noDisplay) + '></div>';
+								'<dd class="ui_tpicker_' + litem + '"' + (show ? '' : noDisplay) + '><div class="ui_tpicker_' + litem + '_slider"></div>';
 
 					if (show && o[litem + 'Grid'] > 0) {
 						html += '<div style="padding-left: 1px"><table class="ui-tpicker-grid-label"><tr>';
@@ -721,6 +722,10 @@
 					this.control.value(this, this.hour_slider, 'hour', this.hour - (this.hour % this._defaults.stepHour));
 				}
 				if (this.minute_slider) {
+					if (this._defaults.singleHourMinutePicker) {
+						this.minute += this.hour * 60;
+						this.hour = 0;
+					}
 					this.control.options(this, this.minute_slider, 'minute', { min: this._defaults.minuteMin, max: minMax, step: this._defaults.stepMinute });
 					this.control.value(this, this.minute_slider, 'minute', this.minute - (this.minute % this._defaults.stepMinute));
 				}
@@ -1042,6 +1047,9 @@
 						if (unit === 'hour') {
 							sel += $.datepicker.formatTime($.trim(format.replace(/[^ht ]/ig, '')), {hour: i}, tp_inst._defaults);
 						}
+						else if (tp_inst._defaults.singleHourMinutePicker && unit === 'minute') {
+							sel += $.datepicker.formatTime($.trim(format), {hour: parseInt( i / 60, 10 ), minute: i % 60}, tp_inst._defaults);
+						}
 						else if (unit === 'millisec' || unit === 'microsec' || i >= 10) { sel += i; }
 						else {sel += '0' + i.toString(); }
 						sel += '</option>';
@@ -1334,7 +1342,13 @@
 
 		var tmptime = format,
 			ampmName = options.amNames[0],
-			hour = parseInt(time.hour, 10);
+			hour = parseInt(time.hour, 10),
+			minute = time.minute;
+
+		if (options.singleHourMinutePicker) {
+			hour += parseInt( time.minute / 60, 10 );
+			minute = time.minute % 60;
+		}
 
 		if (hour > 11) {
 			ampmName = options.pmNames[0];
@@ -1351,9 +1365,9 @@
 			case 'h':
 				return convert24to12(hour);
 			case 'mm':
-				return ('0' + time.minute).slice(-2);
+				return ('0' + minute).slice(-2);
 			case 'm':
-				return time.minute;
+				return minute;
 			case 'ss':
 				return ('0' + time.second).slice(-2);
 			case 's':
@@ -1583,7 +1597,12 @@
 			tp_inst.millisec = date ? date.getMilliseconds() : defaults.millisec;
 			tp_inst.microsec = date ? date.getMicroseconds() : defaults.microsec;
 
-			//check if within min/max times.. 
+			if (defaults.singleHourMinutePicker) {
+				tp_inst.minute += tp_inst.hour * 60;
+				tp_inst.hour = 0;
+			}
+
+			//check if within min/max times..
 			tp_inst._limitMinMaxDateTime(inst, true);
 
 			tp_inst._onTimeChange();
