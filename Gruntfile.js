@@ -46,6 +46,22 @@ module.exports = function(grunt) {
 						'src/docs/footer.html'
 					],
 				dest: 'dist/index.html'
+			},
+			i18n: {
+				options: {
+					//stripBanners: true,
+					banner: '<%=banner %>\n(function($){\n\n',
+					footer: '\n})(jQuery);\n',
+					process: function(src, filepath){
+						return '// source: '+ filepath + '\n' + 
+							src.replace(/\(function\s*\(\$\)\s*\{/g, '')
+								.replace(/\}\)\(jQuery\)\;/g, '')
+								.replace(/\$\.timepicker\.setDefaults\(\$\.timepicker\.regional\[[a-z\-\'\"]+\]\)\;/gi, '')
+								.trim() +'\n';
+					}
+				},
+				src: [ 'src/i18n/jquery-ui-timepicker-*.js' ],
+				dest: 'dist/i18n/<%=pkg.name %>-i18n.js'
 			}
 		},
 		uglify: {
@@ -55,6 +71,10 @@ module.exports = function(grunt) {
 			dist: {
 				src: '<%= concat.dist.dest %>',
 				dest: 'dist/<%= pkg.name %>.min.js'
+			},
+			i18n: {
+				src: 'dist/i18n/<%=pkg.name %>-i18n.js',
+				dest: 'dist/i18n/<%=pkg.name %>-i18n.min.js'
 			}
 		},
 		cssmin: {
@@ -87,8 +107,8 @@ module.exports = function(grunt) {
 			options: {
 				specs: 'test/*_spec.js',
 				vendor: [
-						'http://code.jquery.com/jquery-1.10.1.min.js',
-						'http://code.jquery.com/ui/1.10.3/jquery-ui.min.js',
+						'http://code.jquery.com/jquery-1.11.1.min.js',
+						'http://code.jquery.com/ui/1.11.1/jquery-ui.min.js',
 						'http://github.com/searls/jasmine-fixture/releases/1.0.5/1737/jasmine-fixture.js'
 					]
 			}
@@ -142,6 +162,9 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 
 	// Default task.
-	grunt.registerTask('default', ['jshint', 'jasmine', 'clean', 'copy', 'concat', 'replace', 'uglify', 'cssmin']);
+	grunt.registerTask('default', ['clean', 'copy', 'concat', 'replace', 'uglify', 'cssmin']);
+
+	// Test task.
+	grunt.registerTask('test', ['jshint', 'jasmine']);
 
 };
